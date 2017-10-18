@@ -62,56 +62,13 @@ async def on_ready():
 # Commands T4C
 
 # Boucle toutes les 5 minutes et annonce les morts depuis les 5 derniéres minutes
-async def background_loop():
-    await bot.wait_until_ready()
-    while not bot.is_closed:
-        channel = bot.get_channel(channelCimetiere)
-        conn = mysql.connector.connect(host=mysql_host,user=mysql_user,password=mysql_password, database=mysql_base)
-        cursor = conn.cursor()
-        cursor.execute("""select TimeStamp,LogInfo from logdeath where TimeStamp > date_format(date_sub(now(), interval 5 minute),'%Y%m%d%H%i%S')""")
-        rows = cursor.fetchall()
-        for row in rows:
-            #await bot.say('{0} : {1}'.format(row[0],row[1]))
-            await bot.send_message(channel,'{0} : {1}'.format(row[0],row[1]))
-        conn.close()
-        await asyncio.sleep(300)
-
-bot.loop.create_task(background_loop())
-
-# Boucle toutes les 5 minutes et annonce les discussions des CC des 5 derniéres minutes
-async def background_loop_shout():
-    await bot.wait_until_ready()
-    while not bot.is_closed:
-        channel2 = bot.get_channel(channelCC)
-        conn2 = mysql.connector.connect(host=mysql_host,user=mysql_user,password=mysql_password, database=mysql_base)
-        cursor2 = conn2.cursor()
-        cursor2.execute("""select TimeStamp,LogInfo from logshouts where TimeStamp > date_format(date_sub(now(), interval 5 minute),'%Y%m%d%H%i%S')""")
-        rows2 = cursor2.fetchall()
-        for row in rows2:
-            #await bot.say('{0} : {1}'.format(row[0],row[1]))
-            await bot.send_message(channel2,'{0} : {1}'.format(row[0],row[1]))
-        conn2.close()
-        await asyncio.sleep(300)
-
-bot.loop.create_task(background_loop_shout())
-
-
-# Commande cimetiere, annonce les 10 dernieres morts
-@bot.command()
-async def cimetiere():
-        conn = mysql.connector.connect(host=mysql_host,user=mysql_user,password=mysql_password, database=mysql_base)
-        cursor = conn.cursor()
-        cursor.execute("""SELECT * FROM logdeath WHERE LogInfo NOT LIKE "-----" AND LogInfo NOT LIKE "Starting T4c Server." LIMIT 10""")
-        rows = cursor.fetchall()
-        for row in rows:
-                timing = row[2]
-                await bot.say(timing+' {0}'.format(row[3]))
-        conn.close()
-
+async def send_message_to_channel(channel, message):
+     await bot.wait_until_ready()
+     await bot.send_message(channel,'{0} : {1}'.format(channel,message))
 
 # Commande cimetiere, annonce le top 10 XP
 @bot.command()
-async def top10():
+async def top10XP():
         conn = mysql.connector.connect(host=mysql_host,user=mysql_user,password=mysql_password, database=mysql_base)
         cursor = conn.cursor()
         cursor.execute("""SELECT PlayerName,CurrentLevel FROM playingcharacters ORDER BY CurrentLevel DESC LIMIT 10""")
