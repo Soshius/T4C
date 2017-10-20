@@ -1,10 +1,9 @@
 import discord
-import asyncio
+from discord.ext.commands import Bot
 from discord.ext import commands
+import asyncio
 import random
 import mysql.connector
-import datetime
-import logging
 import sys
 
 #Variable pour connexion à la base T4C
@@ -14,67 +13,49 @@ mysql_password = ""
 mysql_base = ""
 
 #Variable pour le bot Discord
-channelCimetiere = ""
-channelCC = ""
 botKey = ""
 
+description = '''A bot form T4C''' 
+client = commands.Bot(command_prefix="?", description=description)
+
+# Id des channels discord
+channels = {
+	"cc-main" : xxxxxxxxxxxxxxx,
+	"cc-shop" : xxxxxxxxxxxxxxx,
+	"cc-cimetiere" : xxxxxxxxxxxxxxx,
+	"cc-francais" : xxxxxxxxxxxxxxx,
+	"cc-english" : xxxxxxxxxxxxxxx,
+	"cc-portugues" : xxxxxxxxxxxxxxx
+}
+		
+@client.event
+@asyncio.coroutine
+def on_ready():
+	print('Logged in as')
+	print(client.user.name)
+	print(client.user.id)
+	print('------')
+
+@asyncio.coroutine
+def death_log():
+	yield from client.wait_until_ready()
+	while not client.is_closed:
+		conn = mysql.connector.connect(host=mysql_host,user=mysql_user,password=mysql_password,database=mysql_base)
+		cursor = conn.cursor()
+		cursor.execute("""select TIMESTAMP,VICTIME,ASSASSIN from discord_logdeath""")
+		rows = cursor.fetchall()
+		channel = discord.Object(id=channels['cc-cimetiere'])
+		for row in rows:
+			yield from client.send_message(channel,'```{0} à été tué par {1}```'.format(row[1],row[2]))
+        
+		cursor.execute("""TRUNCATE TABLE discord_logdeath""")
+		conn.commit()
+		cursor.close()
+		conn.close()
+		
+		yield from  asyncio.sleep(5) # task runs every 60 seconds
 
 
-class StreamToLogger(object):
-   """
-   Fake file-like stream object that redirects writes to a logger instance.
-   """
-   def __init__(self, logger, log_level=logging.INFO):
-      self.logger = logger
-      self.log_level = log_level
-      self.linebuf = ''
+client.loop.create_task(death_log())
+client.run(botKey)
 
-   def write(self, buf):
-      for line in buf.rstrip().splitlines():
-         self.logger.log(self.log_level, line.rstrip())
-
-logging.basicConfig(
-   level=logging.INFO,
-   format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
-   filename="out.log",
-   filemode='a'
-)
-
-stdout_logger = logging.getLogger('STDOUT')
-sl = StreamToLogger(stdout_logger, logging.INFO)
-sys.stdout = sl
-
-stderr_logger = logging.getLogger('STDERR')
-sl = StreamToLogger(stderr_logger, logging.ERROR)
-sys.stderr = sl
-
-
-description = '''An example bot to for T4C'''
-bot = commands.Bot(command_prefix='?', description=description)
-
-@bot.event
-async def on_ready():
-    print('Logged in as')
-    print(bot.user.name)
-    print(bot.user.id)
-    print('------')
-
-# Commands T4C
-
-# Boucle toutes les 5 minutes et annonce les morts depuis les 5 derniéres minutes
-async def send_message_to_channel(channel, message):
-     await bot.wait_until_ready()
-     await bot.send_message(channel,'{0} : {1}'.format(channel,message))
-
-# Commande cimetiere, annonce le top 10 XP
-@bot.command()
-async def top10XP():
-        conn = mysql.connector.connect(host=mysql_host,user=mysql_user,password=mysql_password, database=mysql_base)
-        cursor = conn.cursor()
-        cursor.execute("""SELECT PlayerName,CurrentLevel FROM playingcharacters ORDER BY CurrentLevel DESC LIMIT 10""")
-        rows = cursor.fetchall()
-        for row in rows:
-                await bot.say('{0} - lvl {1}'.format(row[0],row[1]))
-        conn.close()
-
-bot.run(botKey)
