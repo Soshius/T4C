@@ -12,3 +12,4 @@
 - Install Mysql Connector/Python.
 - Put Bot_Discord_T4C.py and StartDiscordBot.bat in your T4CServer Forlder
 - Run t4c_discord.sql in your t4c_server database.
+- Edit Bot_Discord_T4C.py with your DiscordAPI Key and the channels with channels id from discord.
