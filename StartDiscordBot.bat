@@ -1,0 +1,1 @@
+start cmd.exe /k "python C:\T4CServer\Bot_Discord_T4C.py"
